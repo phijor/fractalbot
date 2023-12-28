@@ -38,5 +38,6 @@ pub struct Cmdline {
     pub status_visibility: StatusVisibility,
 
     #[argh(positional)]
+    /// complex number c parametrizing the generating polynomial f(z) = z² + c
     pub parameter: Option<Complex>,
 }
