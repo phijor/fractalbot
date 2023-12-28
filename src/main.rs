@@ -2,6 +2,7 @@ use std::io::Cursor;
 
 use image::ImageOutputFormat;
 use rand::Rng;
+use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod color;
 mod complex;
@@ -175,15 +176,17 @@ fn main() -> anyhow::Result<()> {
         let mut imgbuf = image::ImageBuffer::new(WIDTH, bbx.height_for(WIDTH));
         let julia = DistanceEstimation::new(c);
 
-        for (pixel, point) in bbx.points(&mut imgbuf) {
-            let d: f64 = julia.distance(point, 1024);
-            *pixel = if d <= 0.0 {
-                image::Rgb([0, 0, 0])
-            } else {
-                let d = sigmoid((50.0 * d).sqrt());
-                crate::color::WHITES.pick(d)
-            };
-        }
+        bbx.points(&mut imgbuf)
+            .par_bridge()
+            .for_each(|(pixel, point)| {
+                let d: f64 = julia.distance(point, 1024);
+                *pixel = if d <= 0.0 {
+                    image::Rgb([0, 0, 0])
+                } else {
+                    let d = sigmoid((50.0 * d).sqrt());
+                    crate::color::WHITES.pick(d)
+                };
+            });
 
         imgbuf.save("dist_fractal.png").unwrap();
 
