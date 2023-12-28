@@ -1,0 +1,16 @@
+name: Post to Mastodon
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+      - name: Run fractalbot with Nix
+        run: nix run . -- --status-visibility public
