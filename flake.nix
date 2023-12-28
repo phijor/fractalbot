@@ -7,7 +7,7 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rust-crate2nix.url = "github:kolloch/crate2nix";
+    rust-crate2nix.url = "github:nix-community/crate2nix";
   };
 
   outputs = inputs @ {
