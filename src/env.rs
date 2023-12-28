@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use argh::FromArgs;
+use megalodon::entities::StatusVisibility;
 
 use std::env;
 
@@ -31,6 +32,10 @@ pub struct Cmdline {
     #[argh(switch, short = 'n', long = "dry-run")]
     /// do not send post
     pub dry_run: bool,
+
+    #[argh(option, default = "StatusVisibility::Private")]
+    /// visibility of the status (public, unlisted, private or direct)
+    pub status_visibility: StatusVisibility,
 
     #[argh(positional)]
     pub parameter: Option<Complex>,

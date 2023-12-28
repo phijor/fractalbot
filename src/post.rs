@@ -11,7 +11,7 @@ use megalodon::{
     SNS::Mastodon,
 };
 
-pub async fn post(image_data: &'static [u8]) -> Result<()> {
+pub async fn post(image_data: &'static [u8], description: String, visibility: StatusVisibility) -> Result<()> {
     let env = crate::env::Environment::from_env()?;
 
     let user_agent = format!(
@@ -37,10 +37,10 @@ pub async fn post(image_data: &'static [u8]) -> Result<()> {
 
     client
         .post_status(
-            "Hello, world!".into(),
+            description,
             Some(&PostStatusInputOptions {
                 media_ids: Some(vec![media.id]),
-                visibility: Some(StatusVisibility::Private),
+                visibility: Some(visibility),
                 ..Default::default()
             }),
         )

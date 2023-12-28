@@ -196,6 +196,10 @@ fn main() -> anyhow::Result<()> {
         Ok(())
     } else {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(crate::post::post(Box::<[u8]>::leak(imgbuf)))
+        rt.block_on(crate::post::post(
+            Box::<[u8]>::leak(imgbuf),
+            format!(r"Julia set of the day: \[c = {}\]", c),
+            cmdline.status_visibility,
+        ))
     }
 }
