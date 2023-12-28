@@ -1,6 +1,7 @@
 #![allow(unused)]
 
 use cgmath::{prelude::*, vec3, Vector3};
+use rand::{distributions::Distribution, seq::SliceRandom};
 
 type Vec3 = Vector3<f64>;
 
@@ -15,6 +16,7 @@ fn vec3_to_rgb(v: Vec3) -> image::Rgb<u8> {
     image::Rgb(v.map(conv).into())
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Palette {
     a: Vec3,
     b: Vec3,
@@ -71,3 +73,13 @@ pub const GLOW: Palette = Palette {
     c: vec3(2.0, 1.0, 1.0),
     d: vec3(0.00, 0.25, 0.25),
 };
+
+const DEFAULT_PALETTES: [Palette; 7] = [RAINBOW, WHITES, ARCTIC, CITRUS, DUSK, PINK, GLOW];
+
+pub struct DefaultPalettes;
+
+impl Distribution<Palette> for DefaultPalettes {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
+        *DEFAULT_PALETTES.choose(rng).unwrap()
+    }
+}

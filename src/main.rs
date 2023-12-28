@@ -12,6 +12,7 @@ mod inverse_iteration;
 mod post;
 
 use crate::{
+    color::DefaultPalettes,
     complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
     env::Cmdline,
@@ -175,6 +176,7 @@ fn main() -> anyhow::Result<()> {
     let imgbuf = {
         let mut imgbuf = image::ImageBuffer::new(WIDTH, bbx.height_for(WIDTH));
         let julia = DistanceEstimation::new(c);
+        let palette = rng.sample(DefaultPalettes);
 
         bbx.points(&mut imgbuf)
             .par_bridge()
@@ -184,7 +186,7 @@ fn main() -> anyhow::Result<()> {
                     image::Rgb([0, 0, 0])
                 } else {
                     let d = sigmoid((50.0 * d).sqrt());
-                    crate::color::WHITES.pick(d)
+                    palette.pick(d)
                 };
             });
 
