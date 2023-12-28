@@ -1,9 +1,11 @@
 [package]
-name = "julia"
+name = "fractalbot"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.75"
+argh = "0.1.12"
 cgmath = "0.18.0"
 futures-retry = "0.6.0"
 image = { version = "0.24.7", default-features = false, features = ["png"] }

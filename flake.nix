@@ -3,11 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    rust-crate2nix = {
-      url = "github:kolloch/crate2nix";
-      flake = false;
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+    rust-crate2nix.url = "github:kolloch/crate2nix";
   };
 
   outputs = inputs @ {
@@ -20,7 +20,7 @@
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
       imports = [
         ./nix/overlays.nix
-        ./nix/julia.nix
+        ./nix/fractalbot.nix
       ];
       perSystem = {
         config,
@@ -31,7 +31,8 @@
         ...
       }: {
         devShells.default = pkgs.mkShell {
-          inputsFrom = [self'.packages.julia];
+          inputsFrom = [self'.packages.fractalbot];
+          packages = [pkgs.openssl];
         };
       };
     };

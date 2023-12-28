@@ -6,12 +6,14 @@ use rand::Rng;
 mod color;
 mod complex;
 mod distance_estimation;
+mod env;
 mod inverse_iteration;
 mod post;
 
 use crate::{
     complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
+    env::Cmdline,
     inverse_iteration::InverseIteration,
 };
 
@@ -148,15 +150,15 @@ fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + f64::exp(-x))
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     const WIDTH: u32 = 1280;
     const ITER: usize = 10_000;
 
     let mut rng = rand::thread_rng();
 
-    let c = std::env::args()
-        .nth(1)
-        .and_then(|s| s.parse().ok())
+    let cmdline: Cmdline = argh::from_env();
+    let c = cmdline
+        .parameter
         .unwrap_or_else(|| rng.sample(JuliaParameter));
 
     println!("c = {}", c);
@@ -190,7 +192,10 @@ fn main() {
         buf.into_inner().into_boxed_slice()
     };
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
-
-    rt.block_on(crate::post::post(Box::<[u8]>::leak(imgbuf)));
+    if cmdline.dry_run {
+        Ok(())
+    } else {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(crate::post::post(Box::<[u8]>::leak(imgbuf)))
+    }
 }

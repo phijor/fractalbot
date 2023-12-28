@@ -1,5 +1,6 @@
 use std::{env, time::Duration};
 
+use anyhow::{Context, Result};
 use futures_retry::{ErrorHandler, FutureRetry, RetryPolicy};
 use megalodon::{
     entities::{Attachment, StatusVisibility, UploadMedia},
@@ -10,42 +11,33 @@ use megalodon::{
     SNS::Mastodon,
 };
 
-type Result<T> = std::result::Result<T, Error>;
-
-pub async fn post(image_data: &'static [u8]) {
-    let Ok(instance) = env::var("MASTODON_INSTANCE_URL") else {
-        eprintln!("$MASTODON_INSTANCE_URL not provided");
-        return;
-    };
-
-    let Ok(token) = env::var("MASTODON_ACCESS_TOKEN") else {
-        eprintln!("$MASTODON_ACCESS_TOKEN not provided");
-        return;
-    };
+pub async fn post(image_data: &'static [u8]) -> Result<()> {
+    let env = crate::env::Environment::from_env()?;
 
     let user_agent = format!(
         "fractalbot/{} (@phijor@types.pl)",
         env!("CARGO_PKG_VERSION")
     );
 
-    let client = megalodon::generator(Mastodon, instance, Some(token), Some(user_agent));
+    let client = megalodon::generator(
+        Mastodon,
+        env.instance_url,
+        Some(env.access_token),
+        Some(user_agent),
+    );
 
-    let res = match client.upload_media_reader(Box::new(image_data), None).await {
-        Ok(res) => res,
-        Err(err) => {
-            eprintln!("Failed to upload media: {err}");
-            return;
-        }
-    };
+    let res = client
+        .upload_media_reader(Box::new(image_data), None)
+        .await
+        .context("Failed to upload image")?;
 
-    let Ok(media) = resolve_uploaded_media(client.as_ref(), res.json()).await else {
-        eprintln!("Failed to upload media");
-        return;
-    };
+    let media = resolve_uploaded_media(client.as_ref(), res.json())
+        .await
+        .context("Failed to resolve uploaded image")?;
 
-    let _ = match client
+    client
         .post_status(
-            "Hello, world".into(),
+            "Hello, world!".into(),
             Some(&PostStatusInputOptions {
                 media_ids: Some(vec![media.id]),
                 visibility: Some(StatusVisibility::Private),
@@ -53,32 +45,33 @@ pub async fn post(image_data: &'static [u8]) {
             }),
         )
         .await
-    {
-        Ok(res) => res,
-        Err(err) => {
-            eprintln!("Failed to post status: {:#?}", err);
-            return;
-        }
-    };
+        .context("Failed to post status")?;
+
+    Ok(())
 }
 
 async fn resolve_uploaded_media(
     client: &(dyn Megalodon + Send + Sync),
     upload: UploadMedia,
-) -> Result<Attachment> {
+) -> std::result::Result<Attachment, megalodon::error::Error> {
     match upload {
         UploadMedia::Attachment(attachment) => Ok(attachment),
-        UploadMedia::AsyncAttachment(async_attachment) => FutureRetry::new(
-            || async {
-                let res: Response<Attachment> =
-                    client.get_media(async_attachment.id.clone()).await?;
-                Ok(res.json())
-            },
-            RetryPartialContent::with_attempts(5),
-        )
-        .await
-        .map(|(res, _)| res)
-        .map_err(|(err, _)| err),
+        UploadMedia::AsyncAttachment(async_attachment) => {
+            let res = FutureRetry::new(
+                || async {
+                    let res: Response<Attachment> =
+                        client.get_media(async_attachment.id.clone()).await?;
+                    std::result::Result::Ok(res.json())
+                },
+                RetryPartialContent::with_attempts(5),
+            )
+            .await;
+
+            match res {
+                Ok((attachment, _tries)) => Ok(attachment),
+                Err((err, _tries)) => Err(err),
+            }
+        }
     }
 }
 
