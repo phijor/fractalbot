@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use anyhow::Context;
 use image::ImageOutputFormat;
 use rand::Rng;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
@@ -190,21 +191,26 @@ fn main() -> anyhow::Result<()> {
                 };
             });
 
-        imgbuf.save("dist_fractal.png").unwrap();
-
-        let mut buf = Cursor::new(Vec::new());
-        imgbuf.write_to(&mut buf, ImageOutputFormat::Png).unwrap();
-        buf.into_inner().into_boxed_slice()
+        imgbuf
     };
 
-    if cmdline.dry_run {
-        Ok(())
-    } else {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(crate::post::post(
-            Box::<[u8]>::leak(imgbuf),
-            format!(r"Julia set of the day: \[c = {}\]", c),
-            cmdline.status_visibility,
-        ))
+    match cmdline.action {
+        env::Action::Save(save) => imgbuf
+            .save(&save.path)
+            .with_context(|| format!("Failed to save image to {}", save.path.display())),
+        env::Action::Post(post) => {
+            let mut buf = Cursor::new(Vec::new());
+            imgbuf
+                .write_to(&mut buf, ImageOutputFormat::Png)
+                .context("Failed to encode image")?;
+            let buf = buf.into_inner().into_boxed_slice();
+
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(crate::post::post(
+                Box::<[u8]>::leak(buf),
+                format!(r"Julia set of the day: \[c = {}\]", c),
+                post.status_visibility,
+            ))
+        }
     }
 }

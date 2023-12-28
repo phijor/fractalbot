@@ -3,6 +3,7 @@ use argh::FromArgs;
 use megalodon::entities::StatusVisibility;
 
 use std::env;
+use std::path::PathBuf;
 
 use crate::complex::Complex;
 
@@ -27,17 +28,37 @@ impl Environment {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// Post a random fractal to the fediverse
-pub struct Cmdline {
-    #[argh(switch, short = 'n', long = "dry-run")]
-    /// do not send post
-    pub dry_run: bool,
+#[argh(subcommand)]
+pub enum Action {
+    Save(Save),
+    Post(Post),
+}
 
+#[derive(FromArgs, PartialEq, Debug)]
+/// Save the image to disk.
+#[argh(subcommand, name = "save")]
+pub struct Save {
+    #[argh(positional, default = r#""fractal.png".into()"#)]
+    /// path to the image on disk
+    pub path: PathBuf,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+/// Post the image to the fediverse.
+#[argh(subcommand, name = "post")]
+pub struct Post {
     #[argh(option, default = "StatusVisibility::Private")]
     /// visibility of the status (public, unlisted, private or direct)
     pub status_visibility: StatusVisibility,
+}
 
+#[derive(FromArgs, PartialEq, Debug)]
+/// Genarate a random fractal and share it.
+pub struct Cmdline {
     #[argh(positional)]
     /// complex number c parametrizing the generating polynomial f(z) = z² + c
     pub parameter: Option<Complex>,
+
+    #[argh(subcommand)]
+    pub action: Action,
 }
