@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use cgmath::{prelude::*, vec3, Vector3};
 use rand::{distributions::Distribution, seq::SliceRandom};
 
