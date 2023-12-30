@@ -1,7 +1,10 @@
 use std::io::Cursor;
+use std::ops::Deref;
 
-use anyhow::Context;
-use image::ImageOutputFormat;
+use anyhow::{Context, Result};
+use humansize::SizeFormatter;
+use image::{ImageBuffer, ImageOutputFormat};
+use log::info;
 use rand::Rng;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
@@ -14,19 +17,37 @@ mod inverse_iteration;
 mod post;
 
 use crate::{
+    bounding_box::BoundingBox,
     color::DefaultPalettes,
-    complex::JuliaParameter,
+    complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
     env::Cmdline,
     inverse_iteration::InverseIteration,
-    bounding_box::BoundingBox,
 };
 
 fn sigmoid(x: f64) -> f64 {
     1.0 / (1.0 + f64::exp(-x))
 }
 
+fn logger_init() {
+    use env_logger::{Builder, Env};
+
+    let style = if std::env::var_os("NO_COLOR").is_some() {
+        "never"
+    } else {
+        "auto"
+    };
+
+    let env = Env::new()
+        .filter_or("FRACTALBOT_LOG", "info")
+        .write_style_or("FRACTALBOT_LOG_STYLE", style);
+
+    Builder::from_env(env).init()
+}
+
 fn main() -> anyhow::Result<()> {
+    logger_init();
+
     const WIDTH: u32 = 1280;
     const ITER: usize = 10_000;
 
@@ -37,7 +58,7 @@ fn main() -> anyhow::Result<()> {
         .parameter
         .unwrap_or_else(|| rng.sample(JuliaParameter));
 
-    println!("c = {}", c);
+    info!("Julia parameter: c = {c}");
 
     let julia: InverseIteration = InverseIteration::new(c);
 
@@ -46,6 +67,11 @@ fn main() -> anyhow::Result<()> {
         .take(ITER)
         .collect();
     bbx.scale(1.20);
+
+    info!(
+        "Bounding box has aspect ratio of {ratio:.2}:1",
+        ratio = bbx.aspect_ratio()
+    );
 
     let imgbuf = {
         let mut imgbuf = image::ImageBuffer::new(WIDTH, bbx.height_for(WIDTH));
@@ -68,22 +94,40 @@ fn main() -> anyhow::Result<()> {
     };
 
     match cmdline.action {
-        env::Action::Save(save) => imgbuf
-            .save(&save.path)
-            .with_context(|| format!("Failed to save image to {}", save.path.display())),
-        env::Action::Post(post) => {
-            let mut buf = Cursor::new(Vec::new());
+        env::Action::Save(save) => {
+            info!("Saving image to {}", save.path.display());
             imgbuf
-                .write_to(&mut buf, ImageOutputFormat::Png)
-                .context("Failed to encode image")?;
-            let buf = buf.into_inner().into_boxed_slice();
+                .save(&save.path)
+                .with_context(|| format!("Failed to save image to {}", save.path.display()))
+        }
+        env::Action::Post(post) => {
+            info!("Encoding image");
+            let encoded_image = encode_png(imgbuf)?;
 
+            info!(
+                "Posting image to fediverse (size: {})",
+                SizeFormatter::new(encoded_image.len(), humansize::DECIMAL)
+            );
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(crate::post::post(
-                Box::<[u8]>::leak(buf),
+                encoded_image,
                 format!(r"Julia set of the day: \[c = {}\]", c),
                 post.status_visibility,
             ))
+            .context("Failed to post image")
         }
     }
+}
+
+fn encode_png<Container>(imgbuf: ImageBuffer<image::Rgb<u8>, Container>) -> Result<&'static [u8]>
+where
+    Container: Deref<Target = [u8]>,
+{
+    let mut encode_buffer = Cursor::new(Vec::new());
+    imgbuf
+        .write_to(&mut encode_buffer, ImageOutputFormat::Png)
+        .context("Failed to encode image")?;
+    let buf = encode_buffer.into_inner().into_boxed_slice();
+
+    Ok(Box::leak(buf))
 }

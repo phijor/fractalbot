@@ -2,6 +2,7 @@ use std::{env, time::Duration};
 
 use anyhow::{Context, Result};
 use futures_retry::{ErrorHandler, FutureRetry, RetryPolicy};
+use log::info;
 use megalodon::{
     entities::{Attachment, StatusVisibility, UploadMedia},
     error::{self, Error, OwnError},
@@ -11,7 +12,11 @@ use megalodon::{
     SNS::Mastodon,
 };
 
-pub async fn post(image_data: &'static [u8], description: String, visibility: StatusVisibility) -> Result<()> {
+pub async fn post(
+    image_data: &'static [u8],
+    description: String,
+    visibility: StatusVisibility,
+) -> Result<()> {
     let env = crate::env::Environment::from_env()?;
 
     let user_agent = format!(
@@ -26,14 +31,17 @@ pub async fn post(image_data: &'static [u8], description: String, visibility: St
         Some(user_agent),
     );
 
+    info!("Uploading image");
     let res = client
         .upload_media_reader(Box::new(image_data), None)
         .await
         .context("Failed to upload image")?;
 
+    info!("Resolving uploaded image");
     let media = resolve_uploaded_media(client.as_ref(), res.json())
         .await
         .context("Failed to resolve uploaded image")?;
+    info!("Uploaded image has ID {}", media.id);
 
     client
         .post_status(
