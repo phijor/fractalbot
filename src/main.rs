@@ -18,15 +18,17 @@ mod post;
 
 use crate::{
     bounding_box::BoundingBox,
-    color::DefaultPalettes,
+    color::PhaseShiftPalette,
     complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
     env::Cmdline,
     inverse_iteration::InverseIteration,
 };
 
-fn sigmoid(x: f64) -> f64 {
-    1.0 / (1.0 + f64::exp(-x))
+/// Squeeze values in range [0, infty) into [0, 1).
+#[inline]
+fn squeeze(x: f64) -> f64 {
+    f64::exp(-x)
 }
 
 fn logger_init() {
@@ -76,19 +78,21 @@ fn main() -> anyhow::Result<()> {
     let imgbuf = {
         let mut imgbuf = image::ImageBuffer::new(WIDTH, bbx.height_for(WIDTH));
         let julia = DistanceEstimation::new(c);
-        let palette = rng.sample(DefaultPalettes);
+        let palette = rng.sample(PhaseShiftPalette);
 
-        bbx.points(&mut imgbuf)
-            .par_bridge()
-            .for_each(|(pixel, point)| {
-                let d: f64 = julia.distance(point, 1024);
-                *pixel = if d <= 0.0 {
-                    image::Rgb([0, 0, 0])
-                } else {
-                    let d = sigmoid((50.0 * d).sqrt());
-                    palette.pick(d)
-                };
-            });
+        info!("Palette: {:.2?}", palette);
+
+        let set_color = move |(pixel, point): (&mut _, Complex)| {
+            let d: f64 = julia.distance(point, 2048);
+            *pixel = if d <= 0.0 {
+                image::Rgb([0, 0, 0])
+            } else {
+                let d = squeeze((25.0 * d).sqrt());
+                palette.pick(d)
+            };
+        };
+
+        bbx.points(&mut imgbuf).par_bridge().for_each(set_color);
 
         imgbuf
     };

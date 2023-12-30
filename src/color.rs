@@ -1,5 +1,6 @@
 use cgmath::{prelude::*, vec3, Vector3};
 use rand::{distributions::Distribution, seq::SliceRandom};
+use rand_distr::{Pert, Uniform};
 
 type Vec3 = Vector3<f64>;
 
@@ -79,5 +80,36 @@ pub struct DefaultPalettes;
 impl Distribution<Palette> for DefaultPalettes {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
         *DEFAULT_PALETTES.choose(rng).unwrap()
+    }
+}
+
+fn sample_vec3<R, D>(rng: &mut R, dist: D) -> Vec3
+where
+    R: rand::Rng + ?Sized,
+    D: Distribution<f64>,
+{
+    vec3(dist.sample(rng), dist.sample(rng), dist.sample(rng))
+}
+
+/// This type implements a random distribution of palettes.
+pub struct PhaseShiftPalette;
+
+impl Distribution<Palette> for PhaseShiftPalette {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
+        // Sample base brightness for each channel with a mode of 0.5,
+        // and a maximum brightness (relative to the base).
+        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0, 0.5).unwrap());
+        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0, 0.8).unwrap());
+
+        // Uniformly sample a random phase shift for each color channel.
+        let variance: f64 = rng.gen();
+        let phase = sample_vec3(rng, Uniform::new(0.0, variance));
+
+        Palette {
+            a: base_brightness,
+            b: base_brightness.zip(max_brightness_ratio, |v, r| (1.0 - v) * r),
+            c: vec3(1.0, 1.0, 0.0),
+            d: phase,
+        }
     }
 }

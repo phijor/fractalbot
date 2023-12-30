@@ -7,7 +7,7 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0.75"
 argh = "0.1.12"
-cgmath = "0.18.0"
+cgmath = { version = "0.18.0", features = ["rand"] }
 futures-retry = "0.6.0"
 image = { version = "0.24.7", default-features = false, features = ["png"] }
 megalodon = { version = "0.11.6", default-features = false, features = ["native-tls"] }
