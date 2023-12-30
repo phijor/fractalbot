@@ -55,7 +55,7 @@ pub struct Post {
 #[derive(FromArgs, PartialEq, Debug)]
 /// Genarate a random fractal and share it.
 pub struct Cmdline {
-    #[argh(positional)]
+    #[argh(option, short = 'c', long = "julia-parameter")]
     /// complex number c parametrizing the generating polynomial f(z) = z² + c
     pub parameter: Option<Complex>,
 
