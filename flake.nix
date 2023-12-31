@@ -32,7 +32,6 @@
       }: {
         devShells.default = pkgs.mkShell {
           inputsFrom = [self'.packages.fractalbot];
-          packages = [pkgs.openssl];
         };
       };
     };
