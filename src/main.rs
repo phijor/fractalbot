@@ -4,7 +4,7 @@ use std::ops::Deref;
 use anyhow::{Context, Result};
 use humansize::SizeFormatter;
 use image::{ImageBuffer, ImageOutputFormat};
-use log::info;
+use log::{debug, info};
 use rand::Rng;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
@@ -18,7 +18,7 @@ mod post;
 
 use crate::{
     bounding_box::BoundingBox,
-    color::PhaseShiftPalette,
+    color::{MonotonePalette, PhaseShiftPalette},
     complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
     env::Cmdline,
@@ -79,12 +79,22 @@ fn main() -> anyhow::Result<()> {
     let imgbuf = {
         let (width, height) = bbx.fit(WIDTH, HEIGHT);
         let mut imgbuf = image::ImageBuffer::new(width, height);
-        let palette = rng.sample(PhaseShiftPalette);
+        const MAX_ITER: usize = 2048;
+        let julia = DistanceEstimation::new(c, MAX_ITER);
 
-        info!("Palette: {:.2?}", palette);
+        let palette = if julia.is_connected() {
+            info!("Julia set is connected");
+            rng.sample(PhaseShiftPalette)
+        } else {
+            info!("Julia set is disconnected");
+            rng.sample(MonotonePalette)
+        };
+
+        debug!("Palette: {:.2?}", palette);
+        debug!("Color for d=0.0: {:?}", palette.pick(0.0));
 
         let set_color = move |(pixel, point): (&mut _, Complex)| {
-            let d: f64 = julia.distance(point, 2048);
+            let d: f64 = julia.distance(point);
             *pixel = if d <= 0.0 {
                 image::Rgb([0, 0, 0])
             } else {
