@@ -113,3 +113,22 @@ impl Distribution<Palette> for PhaseShiftPalette {
         }
     }
 }
+
+pub struct MonotonePalette;
+
+/// Like [PhaseShiftPalette], but the phases are centered around 0.5
+/// with little variance, making the palette appear in one monotone hue.
+impl Distribution<Palette> for MonotonePalette {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
+        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0, 0.5).unwrap());
+        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0, 0.8).unwrap());
+        let phase = sample_vec3(rng, Pert::new_with_shape(0.0, 1.0, 0.5, 100.0).unwrap());
+
+        Palette {
+            a: base_brightness,
+            b: base_brightness.zip(max_brightness_ratio, |v, r| (1.0 - v) * r),
+            c: sample_vec3(rng, Uniform::new(0.5, 1.0)),
+            d: phase,
+        }
+    }
+}
