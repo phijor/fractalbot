@@ -36,7 +36,6 @@ impl BoundingBox {
         d.re / d.im
     }
 
-    #[allow(unused)]
     pub fn width_for(&self, height: u32) -> u32 {
         let height: f64 = height.into();
 
@@ -47,6 +46,15 @@ impl BoundingBox {
         let width: f64 = width.into();
 
         (width * (1.0 / self.aspect_ratio())) as u32
+    }
+
+    pub fn fit(&self, width: u32, height: u32) -> (u32, u32) {
+        if self.aspect_ratio() > 1.0 {
+            // Bounding box is wider than tall
+            (width, self.height_for(width))
+        } else {
+            (self.width_for(height), height)
+        }
     }
 
     pub fn scale(&mut self, scale: f64) {

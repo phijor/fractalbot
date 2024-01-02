@@ -51,6 +51,7 @@ fn main() -> anyhow::Result<()> {
     logger_init();
 
     const WIDTH: u32 = 1280;
+    const HEIGHT: u32 = 1280;
     const ITER: usize = 10_000;
 
     let mut rng = rand::thread_rng();
@@ -76,8 +77,8 @@ fn main() -> anyhow::Result<()> {
     );
 
     let imgbuf = {
-        let mut imgbuf = image::ImageBuffer::new(WIDTH, bbx.height_for(WIDTH));
-        let julia = DistanceEstimation::new(c);
+        let (width, height) = bbx.fit(WIDTH, HEIGHT);
+        let mut imgbuf = image::ImageBuffer::new(width, height);
         let palette = rng.sample(PhaseShiftPalette);
 
         info!("Palette: {:.2?}", palette);
