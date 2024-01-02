@@ -108,7 +108,7 @@ impl Distribution<Palette> for PhaseShiftPalette {
         Palette {
             a: base_brightness,
             b: base_brightness.zip(max_brightness_ratio, |v, r| (1.0 - v) * r),
-            c: vec3(1.0, 1.0, 0.0),
+            c: vec3(1.0, 1.0, 1.0),
             d: phase,
         }
     }
