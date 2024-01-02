@@ -62,23 +62,6 @@ impl BoundingBox {
         self.max *= scale;
     }
 
-    fn to_grid(&self, point: &Complex, width: u32, height: u32) -> Option<(u32, u32)> {
-        let rel: Complex = self.offset(point);
-        let dim: Complex = self.abs_dimension();
-
-        if (rel.re < 0.0 || rel.im < 0.0) || (rel.re > dim.re || rel.im > dim.im) {
-            return None;
-        }
-
-        let d_x: f64 = rel.re / dim.re;
-        let d_y: f64 = rel.im / dim.im;
-
-        let x = (d_x * ((width - 1) as f64)) as u32;
-        let y = (d_y * ((height - 1) as f64)) as u32;
-
-        Some((x, y))
-    }
-
     pub fn point_from_grid(&self, x: u32, y: u32, width: u32, height: u32) -> Complex {
         let x_rel = f64::from(x) / f64::from(width);
         let y_rel = f64::from(y) / f64::from(height);
