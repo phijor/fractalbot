@@ -1,4 +1,5 @@
 [![Posting to Mastodon](https://github.com/phijor/fractalbot/actions/workflows/post.yml/badge.svg)](https://github.com/phijor/fractalbot/actions/workflows/post.yml)
+[![Mastodon Follow](https://img.shields.io/mastodon/follow/111528870324849525?domain=https%3A%2F%2Fmathstodon.xyz&style=for-the-badge&logo=mastodon&logoColor=white&labelColor=424769&color=7077A1&link=https%3A%2F%2Fmathstodon.xyz%2F%40fractalbot)](https://mathstodon.xyz/@fractalbot)
 
 ---
 
