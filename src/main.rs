@@ -19,8 +19,8 @@ mod post;
 use crate::{
     bounding_box::BoundingBox,
     color::MonotonePalette,
-    complex::{Complex, JuliaParameter},
-    distance_estimation::DistanceEstimation,
+    complex::Complex,
+    distance_estimation::{DistanceEstimation, MandelbrotBoundary},
     env::Cmdline,
     inverse_iteration::InverseIteration,
 };
@@ -53,13 +53,14 @@ fn main() -> anyhow::Result<()> {
     const WIDTH: u32 = 1280;
     const HEIGHT: u32 = 1280;
     const ITER: usize = 10_000;
+    const MAX_ITER: usize = 4096;
 
     let mut rng = rand::thread_rng();
 
     let cmdline: Cmdline = argh::from_env();
     let c = cmdline
         .parameter
-        .unwrap_or_else(|| rng.sample(JuliaParameter));
+        .unwrap_or_else(|| rng.sample(MandelbrotBoundary { max_iter: MAX_ITER }));
 
     info!("Julia parameter: c = {c}");
 
@@ -79,7 +80,6 @@ fn main() -> anyhow::Result<()> {
     let imgbuf = {
         let (width, height) = bbx.fit(WIDTH, HEIGHT);
         let mut imgbuf = image::ImageBuffer::new(width, height);
-        const MAX_ITER: usize = 2048;
         let julia = DistanceEstimation::new(c, MAX_ITER);
 
         let palette = rng.sample(MonotonePalette);
