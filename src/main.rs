@@ -18,7 +18,7 @@ mod post;
 
 use crate::{
     bounding_box::BoundingBox,
-    color::{MonotonePalette, PhaseShiftPalette},
+    color::MonotonePalette,
     complex::{Complex, JuliaParameter},
     distance_estimation::DistanceEstimation,
     env::Cmdline,
@@ -82,12 +82,13 @@ fn main() -> anyhow::Result<()> {
         const MAX_ITER: usize = 2048;
         let julia = DistanceEstimation::new(c, MAX_ITER);
 
-        let palette = if julia.is_connected() {
+        let palette = rng.sample(MonotonePalette);
+        let sharpness = if julia.is_connected() {
             info!("Julia set is connected");
-            rng.sample(PhaseShiftPalette)
+            25.0
         } else {
             info!("Julia set is disconnected");
-            rng.sample(MonotonePalette)
+            100.0
         };
 
         debug!("Palette: {:.2?}", palette);
@@ -98,7 +99,7 @@ fn main() -> anyhow::Result<()> {
             *pixel = if d <= 0.0 {
                 image::Rgb([0, 0, 0])
             } else {
-                let d = squeeze((25.0 * d).sqrt());
+                let d = squeeze((sharpness * d).sqrt());
                 palette.pick(d)
             };
         };
