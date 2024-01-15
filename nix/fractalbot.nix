@@ -1,21 +1,22 @@
-{inputs, ...}: {
-  config = {
-    perSystem = {pkgs, ...}: let
-      crateTools = pkgs.callPackage "${inputs.rust-crate2nix}/tools.nix" {inherit pkgs;};
-      project = crateTools.appliedCargoNix {
-        name = "fractalbot";
-        src = ./..;
-      };
-      fractalbot = project.rootCrate.build;
-    in rec {
-      packages = {
-        inherit fractalbot;
-        default = fractalbot;
-      };
+_: {
+  perSystem =
+    { pkgs
+    , config
+    , ...
+    }:
+    let
+      crateName = "fractalbot";
+      crateOutputs = config.nci.outputs.${crateName};
+    in
+    rec {
+      nci.projects."simple".path = ./..;
+      nci.crates.${crateName} = { };
+
+      devShells.default = crateOutputs.devShell;
+      packages.default = crateOutputs.packages.release;
       apps = {
         type = "app";
-        program = "${fractalbot}/bin/fractalbot";
+        program = "${packages.default}/bin/fractalbot";
       };
     };
-  };
 }
