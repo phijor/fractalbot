@@ -3,36 +3,40 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
+
+    flake-utils = {
+      url = "github:numtide/flake-utils";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rust-crate2nix.url = "github:nix-community/crate2nix";
+
+    nci = {
+      url = "github:yusdacra/nix-cargo-integration";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs @ {
-    flake-parts,
-    rust-overlay,
-    rust-crate2nix,
-    ...
-  }:
-    flake-parts.lib.mkFlake {inherit inputs;} {
-      systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
-      imports = [
-        ./nix/overlays.nix
-        ./nix/fractalbot.nix
-      ];
-      perSystem = {
-        config,
-        self',
-        inputs',
-        pkgs,
-        system,
-        ...
-      }: {
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [self'.packages.fractalbot];
-        };
+  outputs =
+    inputs @ { flake-parts
+    , nci
+    , flake-utils
+    , ...
+    }:
+    flake-parts.lib.mkFlake
+      {
+        inherit inputs;
+      }
+      {
+        systems = flake-utils.lib.defaultSystems;
+        imports = [
+          nci.flakeModule
+          ./nix/fractalbot.nix
+        ];
+
+
       };
-    };
 }
