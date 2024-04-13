@@ -4,6 +4,7 @@ use std::ops::Deref;
 use anyhow::{Context, Result};
 use humansize::SizeFormatter;
 use image::{ImageBuffer, ImageFormat};
+use indoc::formatdoc;
 use log::{debug, info};
 use rand::Rng;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
@@ -120,6 +121,14 @@ fn main() -> anyhow::Result<()> {
         env::Action::Post(post) => {
             info!("Encoding image");
             let encoded_image = encode_png(imgbuf)?;
+            let description = formatdoc! { r#"
+                Julia set of the day:
+                \[
+                    c = {c}
+                \]
+
+                #fractal #generative
+            "#};
 
             info!(
                 "Posting image to fediverse (size: {})",
@@ -128,7 +137,7 @@ fn main() -> anyhow::Result<()> {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(crate::post::post(
                 encoded_image,
-                format!(r"Julia set of the day: \[c = {}\]", c),
+                description,
                 post.status_visibility,
             ))
             .context("Failed to post image")
