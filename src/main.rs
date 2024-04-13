@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use anyhow::{Context, Result};
 use humansize::SizeFormatter;
-use image::{ImageBuffer, ImageOutputFormat};
+use image::{ImageBuffer, ImageFormat};
 use log::{debug, info};
 use rand::Rng;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
@@ -141,7 +141,7 @@ where
 {
     let mut encode_buffer = Cursor::new(Vec::new());
     imgbuf
-        .write_to(&mut encode_buffer, ImageOutputFormat::Png)
+        .write_to(&mut encode_buffer, ImageFormat::Png)
         .context("Failed to encode image")?;
     let buf = encode_buffer.into_inner().into_boxed_slice();
 
