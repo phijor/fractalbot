@@ -15,6 +15,7 @@ mod distance_estimation;
 mod env;
 mod inverse_iteration;
 mod post;
+mod retry;
 
 use crate::{
     bounding_box::BoundingBox,

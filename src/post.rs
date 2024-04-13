@@ -1,16 +1,78 @@
-use std::{env, time::Duration};
+use std::env;
 
 use anyhow::{Context, Result};
-use futures_retry::{ErrorHandler, FutureRetry, RetryPolicy};
 use log::info;
 use megalodon::{
     entities::{Attachment, StatusVisibility, UploadMedia},
     error::{self, Error, OwnError},
     megalodon::PostStatusInputOptions,
-    response::Response,
     Megalodon,
     SNS::Mastodon,
 };
+
+use crate::retry::{retry, Retry};
+
+struct Status {
+    client: Box<dyn Megalodon + Send + Sync>,
+}
+
+impl Status {
+    async fn upload_image(&self, image_data: &'static [u8]) -> Result<UploadMedia> {
+        retry(Retry::any(), || async {
+            self.client
+                .upload_media_reader(Box::new(image_data), None)
+                .await
+                .map(|res| res.json())
+        })
+        .await
+    }
+
+    async fn resolve_uploaded_media(&self, upload: UploadMedia) -> Result<Attachment> {
+        match upload {
+            UploadMedia::Attachment(attachment) => Ok(attachment),
+            UploadMedia::AsyncAttachment(async_attachment) => {
+                let retry_partian_content = Retry::when(|err: &Error| {
+                    matches!(
+                        err,
+                        Error::OwnError(OwnError {
+                            kind: error::Kind::HTTPPartialContentError,
+                            ..
+                        })
+                    )
+                });
+                retry(retry_partian_content, || async {
+                    self.client
+                        .get_media(async_attachment.id.clone())
+                        .await
+                        .map(|res| res.json())
+                })
+                .await
+            }
+        }
+    }
+
+    async fn post(
+        &self,
+        media_id: String,
+        description: String,
+        visibility: StatusVisibility,
+    ) -> Result<()> {
+        retry(Retry::any(), || async {
+            self.client
+                .post_status(
+                    description.clone(),
+                    Some(&PostStatusInputOptions {
+                        media_ids: Some(vec![media_id.clone()]),
+                        visibility: Some(visibility.clone()),
+                        ..Default::default()
+                    }),
+                )
+                .await
+                .map(drop)
+        })
+        .await
+    }
+}
 
 pub async fn post(
     image_data: &'static [u8],
@@ -31,82 +93,25 @@ pub async fn post(
         Some(user_agent),
     );
 
-    info!("Uploading image");
-    let res = client
-        .upload_media_reader(Box::new(image_data), None)
+    let status = Status { client };
+
+    info!("Uploading image...");
+    let media = status
+        .upload_image(image_data)
         .await
         .context("Failed to upload image")?;
 
-    info!("Resolving uploaded image");
-    let media = resolve_uploaded_media(client.as_ref(), res.json())
+    info!("Resolving uploaded image...");
+    let media = status
+        .resolve_uploaded_media(media)
         .await
         .context("Failed to resolve uploaded image")?;
+
     info!("Uploaded image has ID {}", media.id);
 
-    client
-        .post_status(
-            description,
-            Some(&PostStatusInputOptions {
-                media_ids: Some(vec![media.id]),
-                visibility: Some(visibility),
-                ..Default::default()
-            }),
-        )
+    info!("Posting status...");
+    status
+        .post(media.id, description, visibility)
         .await
-        .context("Failed to post status")?;
-
-    Ok(())
-}
-
-async fn resolve_uploaded_media(
-    client: &(dyn Megalodon + Send + Sync),
-    upload: UploadMedia,
-) -> std::result::Result<Attachment, megalodon::error::Error> {
-    match upload {
-        UploadMedia::Attachment(attachment) => Ok(attachment),
-        UploadMedia::AsyncAttachment(async_attachment) => {
-            let res = FutureRetry::new(
-                || async {
-                    let res: Response<Attachment> =
-                        client.get_media(async_attachment.id.clone()).await?;
-                    std::result::Result::Ok(res.json())
-                },
-                RetryPartialContent::with_attempts(5),
-            )
-            .await;
-
-            match res {
-                Ok((attachment, _tries)) => Ok(attachment),
-                Err((err, _tries)) => Err(err),
-            }
-        }
-    }
-}
-
-struct RetryPartialContent {
-    attempts: usize,
-}
-
-impl RetryPartialContent {
-    fn with_attempts(attempts: usize) -> Self {
-        Self { attempts }
-    }
-}
-
-impl ErrorHandler<Error> for RetryPartialContent {
-    type OutError = Error;
-
-    fn handle(&mut self, attempt: usize, err: Error) -> RetryPolicy<Self::OutError> {
-        if attempt > self.attempts {
-            return RetryPolicy::ForwardError(err);
-        }
-
-        match err {
-            Error::OwnError(OwnError {
-                kind: error::Kind::HTTPPartialContentError,
-                ..
-            }) => RetryPolicy::WaitRetry(Duration::from_secs(2u64.pow(attempt as u32))),
-            err => RetryPolicy::ForwardError(err),
-        }
-    }
+        .context("Failed to post status")
 }

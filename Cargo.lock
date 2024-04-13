@@ -439,6 +439,7 @@ dependencies = [
  "argh",
  "cgmath",
  "env_logger",
+ "futures",
  "futures-retry",
  "humansize",
  "image",
