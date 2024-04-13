@@ -12,5 +12,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: DeterminateSystems/flake-checker-action@main
+      - name: Build Rust crate dependencies with Nix
+        run: nix build .#crate-dependencies
       - name: Build fractalbot with Nix
         run: nix build .

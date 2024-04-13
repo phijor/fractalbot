@@ -7,9 +7,13 @@
         src = ./..;
       };
       fractalbot = project.rootCrate.build;
+      crate-dependencies = pkgs.symlinkJoin {
+        name = "fractalbot-dependencies";
+        paths = fractalbot.completeDeps;
+      };
     in rec {
       packages = {
-        inherit fractalbot;
+        inherit fractalbot crate-dependencies;
         default = fractalbot;
       };
       apps = {
