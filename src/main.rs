@@ -80,7 +80,7 @@ fn main() -> anyhow::Result<()> {
     );
 
     let imgbuf = {
-        let (width, height) = bbx.fit(WIDTH, HEIGHT);
+        let (width, height) = bbx.fit(WIDTH * 2, HEIGHT * 2);
         let mut imgbuf = image::ImageBuffer::new(width, height);
         let julia = DistanceEstimation::new(c, MAX_ITER);
 
@@ -108,7 +108,8 @@ fn main() -> anyhow::Result<()> {
 
         bbx.points(&mut imgbuf).par_bridge().for_each(set_color);
 
-        imgbuf
+        info!("Downscaling supersampled image...");
+        image::imageops::resize(&imgbuf, width / 2, height / 2, image::imageops::FilterType::Triangle)
     };
 
     match cmdline.action {
