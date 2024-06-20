@@ -1,11 +1,7 @@
 {inputs, ...}: {
   config = {
     perSystem = {pkgs, ...}: let
-      crateTools = pkgs.callPackage "${inputs.rust-crate2nix}/tools.nix" {inherit pkgs;};
-      project = crateTools.appliedCargoNix {
-        name = "fractalbot";
-        src = ./..;
-      };
+      project = import ../Cargo.nix { inherit pkgs; };
       fractalbot = project.rootCrate.build;
       crate-dependencies = pkgs.symlinkJoin {
         name = "fractalbot-dependencies";
