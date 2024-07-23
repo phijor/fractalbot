@@ -113,7 +113,7 @@ impl Distribution<Complex> for MandelbrotBoundary {
             })
             .unwrap();
 
-        let r: f64 = rng.sample(Normal::new(0.0, 20.0 * DISTANCE).unwrap());
+        let r: f64 = rng.sample(Normal::new(0.0, 40.0 * DISTANCE).unwrap());
         let theta = rng.gen_range(0.0..std::f64::consts::TAU);
         let pertubation = Complex::from_polar(r, theta);
 
