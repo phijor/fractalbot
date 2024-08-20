@@ -122,7 +122,18 @@ fn main() -> anyhow::Result<()> {
                 .save(&save.path)
                 .with_context(|| format!("Failed to save image to {}", save.path.display()))
         }
-        env::Action::Post(post) => post_status(post, c, imgbuf),
+        env::Action::Post(Post { status_visibility }) => {
+            let description = formatdoc! {r#"
+                Julia set of the day:
+                \[
+                    c = {c}
+                \]
+
+                #fractal #generative
+            "#};
+
+            post_status(imgbuf, description, status_visibility)
+        }
     }
 }
 
@@ -140,25 +151,15 @@ where
 }
 
 fn post_status<Container>(
-    post: Post,
-    c: Complex,
     imgbuf: ImageBuffer<image::Rgb<u8>, Container>,
+    description: String,
+    visibility: fractalbot_post::StatusVisibility,
 ) -> Result<()>
 where
     Container: Deref<Target = [u8]>,
 {
     info!("Encoding image");
     let encoded_image = encode_png(imgbuf)?;
-    let description = formatdoc! {
-        r#"
-            Julia set of the day:
-            \[
-                c = {c}
-            \]
-
-            #fractal #generative
-        "#
-    };
 
     info!(
         "Posting image to fediverse (size: {})",
@@ -173,6 +174,6 @@ where
     let client = fractalbot_post::Client::new(env.instance_url, env.access_token, user_agent);
 
     let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(client.post_status_with_image(encoded_image, description, post.status_visibility))
+    rt.block_on(client.post_status_with_image(encoded_image, description, visibility))
         .context("Failed to post image")
 }
