@@ -1,0 +1,12 @@
+[package]
+name = "fractalbot-post"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0.75"
+futures = "0.3.30"
+futures-retry = "0.6.0"
+log = "0.4.20"
+megalodon = { version = "0.13.3", features = ["rustls-tls"] }

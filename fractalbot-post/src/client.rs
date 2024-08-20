@@ -1,22 +1,31 @@
-use std::env;
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use log::info;
 use megalodon::{
-    entities::{Attachment, StatusVisibility, UploadMedia},
+    entities::{Attachment, UploadMedia},
     error::{self, Error, OwnError},
     megalodon::PostStatusInputOptions,
     Megalodon,
     SNS::Mastodon,
 };
 
+pub use megalodon::entities::StatusVisibility;
+
 use crate::retry::{retry, Retry};
 
-struct Status {
-    client: Box<dyn Megalodon + Send + Sync>,
+pub struct Client {
+    pub client: Arc<dyn Megalodon + Send + Sync>,
 }
 
-impl Status {
+impl Client {
+    pub fn new(instance_url: String, access_token: String, user_agent: String) -> Self {
+        let client: Arc<_> =
+            megalodon::generator(Mastodon, instance_url, Some(access_token), Some(user_agent))
+                .into();
+        Self { client }
+    }
+
     async fn upload_image(&self, image_data: &'static [u8]) -> Result<UploadMedia> {
         retry(Retry::any(), || async {
             self.client
@@ -51,7 +60,7 @@ impl Status {
         }
     }
 
-    async fn post(
+    pub async fn post_status(
         &self,
         media_id: String,
         description: String,
@@ -72,46 +81,30 @@ impl Status {
         })
         .await
     }
-}
 
-pub async fn post(
-    image_data: &'static [u8],
-    description: String,
-    visibility: StatusVisibility,
-) -> Result<()> {
-    let env = crate::env::Environment::from_env()?;
+    pub async fn post_status_with_image(
+        &self,
+        image_data: &'static [u8],
+        description: String,
+        visibility: StatusVisibility,
+    ) -> Result<()> {
+        info!("Uploading image...");
+        let media = self
+            .upload_image(image_data)
+            .await
+            .context("Failed to upload image")?;
 
-    let user_agent = format!(
-        "fractalbot/{} (@phijor@types.pl)",
-        env!("CARGO_PKG_VERSION")
-    );
+        info!("Resolving uploaded image...");
+        let media = self
+            .resolve_uploaded_media(media)
+            .await
+            .context("Failed to resolve uploaded image")?;
 
-    let client = megalodon::generator(
-        Mastodon,
-        env.instance_url,
-        Some(env.access_token),
-        Some(user_agent),
-    );
+        info!("Uploaded image has ID {}", media.id);
 
-    let status = Status { client };
-
-    info!("Uploading image...");
-    let media = status
-        .upload_image(image_data)
-        .await
-        .context("Failed to upload image")?;
-
-    info!("Resolving uploaded image...");
-    let media = status
-        .resolve_uploaded_media(media)
-        .await
-        .context("Failed to resolve uploaded image")?;
-
-    info!("Uploaded image has ID {}", media.id);
-
-    info!("Posting status...");
-    status
-        .post(media.id, description, visibility)
-        .await
-        .context("Failed to post status")
+        info!("Posting status...");
+        self.post_status(media.id, description, visibility)
+            .await
+            .context("Failed to post status")
+    }
 }

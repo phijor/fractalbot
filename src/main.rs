@@ -15,15 +15,13 @@ mod complex;
 mod distance_estimation;
 mod env;
 mod inverse_iteration;
-mod post;
-mod retry;
 
 use crate::{
     bounding_box::BoundingBox,
     color::MonotonePalette,
     complex::Complex,
     distance_estimation::{DistanceEstimation, MandelbrotBoundary},
-    env::Cmdline,
+    env::{Cmdline, Environment, Post},
     inverse_iteration::InverseIteration,
 };
 
@@ -109,7 +107,12 @@ fn main() -> anyhow::Result<()> {
         bbx.points(&mut imgbuf).par_bridge().for_each(set_color);
 
         info!("Downscaling supersampled image...");
-        image::imageops::resize(&imgbuf, width / 2, height / 2, image::imageops::FilterType::Triangle)
+        image::imageops::resize(
+            &imgbuf,
+            width / 2,
+            height / 2,
+            image::imageops::FilterType::Triangle,
+        )
     };
 
     match cmdline.action {
@@ -119,30 +122,7 @@ fn main() -> anyhow::Result<()> {
                 .save(&save.path)
                 .with_context(|| format!("Failed to save image to {}", save.path.display()))
         }
-        env::Action::Post(post) => {
-            info!("Encoding image");
-            let encoded_image = encode_png(imgbuf)?;
-            let description = formatdoc! { r#"
-                Julia set of the day:
-                \[
-                    c = {c}
-                \]
-
-                #fractal #generative
-            "#};
-
-            info!(
-                "Posting image to fediverse (size: {})",
-                SizeFormatter::new(encoded_image.len(), humansize::DECIMAL)
-            );
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(crate::post::post(
-                encoded_image,
-                description,
-                post.status_visibility,
-            ))
-            .context("Failed to post image")
-        }
+        env::Action::Post(post) => post_status(post, c, imgbuf),
     }
 }
 
@@ -157,4 +137,42 @@ where
     let buf = encode_buffer.into_inner().into_boxed_slice();
 
     Ok(Box::leak(buf))
+}
+
+fn post_status<Container>(
+    post: Post,
+    c: Complex,
+    imgbuf: ImageBuffer<image::Rgb<u8>, Container>,
+) -> Result<()>
+where
+    Container: Deref<Target = [u8]>,
+{
+    info!("Encoding image");
+    let encoded_image = encode_png(imgbuf)?;
+    let description = formatdoc! {
+        r#"
+            Julia set of the day:
+            \[
+                c = {c}
+            \]
+
+            #fractal #generative
+        "#
+    };
+
+    info!(
+        "Posting image to fediverse (size: {})",
+        SizeFormatter::new(encoded_image.len(), humansize::DECIMAL)
+    );
+
+    let user_agent = format!(
+        "fractalbot/{} (@phijor@types.pl)",
+        env!("CARGO_PKG_VERSION")
+    );
+    let env = Environment::from_env()?;
+    let client = fractalbot_post::Client::new(env.instance_url, env.access_token, user_agent);
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(client.post_status_with_image(encoded_image, description, post.status_visibility))
+        .context("Failed to post image")
 }

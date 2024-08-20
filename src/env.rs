@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use argh::FromArgs;
-use megalodon::entities::StatusVisibility;
+use fractalbot_post::StatusVisibility;
 
 use std::env;
 use std::path::PathBuf;

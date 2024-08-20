@@ -461,18 +461,27 @@ dependencies = [
  "argh",
  "cgmath",
  "env_logger",
- "futures",
- "futures-retry",
+ "fractalbot-post",
  "humansize",
  "image",
  "indoc",
  "log",
- "megalodon",
  "num-complex",
  "rand",
  "rand_distr",
  "rayon",
  "tokio",
+]
+
+[[package]]
+name = "fractalbot-post"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "futures",
+ "futures-retry",
+ "log",
+ "megalodon",
 ]
 
 [[package]]

@@ -1290,12 +1290,8 @@ rec {
             packageId = "env_logger";
           }
           {
-            name = "futures";
-            packageId = "futures";
-          }
-          {
-            name = "futures-retry";
-            packageId = "futures-retry";
+            name = "fractalbot-post";
+            packageId = "fractalbot-post";
           }
           {
             name = "humansize";
@@ -1315,11 +1311,6 @@ rec {
           {
             name = "log";
             packageId = "log";
-          }
-          {
-            name = "megalodon";
-            packageId = "megalodon";
-            features = [ "rustls-tls" ];
           }
           {
             name = "num-complex";
@@ -1342,6 +1333,37 @@ rec {
             name = "tokio";
             packageId = "tokio";
             usesDefaultFeatures = false;
+          }
+        ];
+
+      };
+      "fractalbot-post" = rec {
+        crateName = "fractalbot-post";
+        version = "0.1.0";
+        edition = "2021";
+        src = lib.cleanSourceWith { filter = sourceFilter;  src = ./fractalbot-post; };
+        libName = "fractalbot_post";
+        dependencies = [
+          {
+            name = "anyhow";
+            packageId = "anyhow";
+          }
+          {
+            name = "futures";
+            packageId = "futures";
+          }
+          {
+            name = "futures-retry";
+            packageId = "futures-retry";
+          }
+          {
+            name = "log";
+            packageId = "log";
+          }
+          {
+            name = "megalodon";
+            packageId = "megalodon";
+            features = [ "rustls-tls" ];
           }
         ];
 
