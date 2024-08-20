@@ -1,7 +1,7 @@
 {inputs, ...}: {
   config = {
     perSystem = {pkgs, ...}: let
-      project = import ../Cargo.nix { inherit pkgs; };
+      project = import ./Cargo.nix { inherit pkgs; };
       fractalbot = project.rootCrate.build;
       crate-dependencies = pkgs.symlinkJoin {
         name = "fractalbot-dependencies";
