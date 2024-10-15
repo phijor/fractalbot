@@ -1245,7 +1245,7 @@ rec {
       };
       "fractalbot" = rec {
         crateName = "fractalbot";
-        version = "0.3.1";
+        version = "0.3.2";
         edition = "2021";
         crateBin = [
           {
