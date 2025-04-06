@@ -1,5 +1,5 @@
 use cgmath::{prelude::*, vec3, Vector3};
-use rand::{distributions::Distribution, seq::SliceRandom};
+use rand::{distr::Distribution, seq::IndexedRandom};
 use rand_distr::{Pert, Uniform};
 
 type Vec3 = Vector3<f64>;
@@ -98,12 +98,12 @@ impl Distribution<Palette> for PhaseShiftPalette {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
         // Sample base brightness for each channel with a mode of 0.5,
         // and a maximum brightness (relative to the base).
-        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0, 0.5).unwrap());
-        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0, 0.8).unwrap());
+        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0).with_mode(0.5).unwrap());
+        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0).with_mode(0.8).unwrap());
 
         // Uniformly sample a random phase shift for each color channel.
-        let variance: f64 = rng.gen();
-        let phase = sample_vec3(rng, Uniform::new(0.0, variance));
+        let variance: f64 = rng.random();
+        let phase = sample_vec3(rng, Uniform::new(0.0, variance).unwrap());
 
         Palette {
             a: base_brightness,
@@ -120,14 +120,20 @@ pub struct MonotonePalette;
 /// with little variance, making the palette appear in one monotone hue.
 impl Distribution<Palette> for MonotonePalette {
     fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Palette {
-        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0, 0.5).unwrap());
-        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0, 0.5).unwrap());
-        let phase = sample_vec3(rng, Pert::new_with_shape(0.0, 1.0, 0.5, 100.0).unwrap());
+        let base_brightness = sample_vec3(rng, Pert::new(0.0, 1.0).with_mode(0.5).unwrap());
+        let max_brightness_ratio = sample_vec3(rng, Pert::new(0.0, 1.0).with_mode(0.5).unwrap());
+        let phase = sample_vec3(
+            rng,
+            Pert::new(0.0, 1.0)
+                .with_shape(100.0)
+                .with_mode(0.5)
+                .unwrap(),
+        );
 
         Palette {
             a: base_brightness,
             b: base_brightness.zip(max_brightness_ratio, |v, r| (1.0 - v) * r),
-            c: sample_vec3(rng, Uniform::new(0.8, 1.0)),
+            c: sample_vec3(rng, Uniform::new(0.8, 1.0).unwrap()),
             d: phase,
         }
     }

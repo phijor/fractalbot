@@ -738,19 +738,12 @@ rec {
             name = "num-traits";
             packageId = "num-traits";
           }
-          {
-            name = "rand";
-            packageId = "rand 0.8.5";
-            optional = true;
-            features = [ "small_rng" ];
-          }
         ];
         features = {
           "mint" = [ "dep:mint" ];
           "rand" = [ "dep:rand" ];
           "serde" = [ "dep:serde" ];
         };
-        resolvedDefaultFeatures = [ "rand" ];
       };
       "chrono" = rec {
         crateName = "chrono";
@@ -1334,7 +1327,6 @@ rec {
           {
             name = "cgmath";
             packageId = "cgmath";
-            features = [ "rand" ];
           }
           {
             name = "env_logger";
@@ -1366,11 +1358,10 @@ rec {
           {
             name = "num-complex";
             packageId = "num-complex";
-            features = [ "rand" ];
           }
           {
             name = "rand";
-            packageId = "rand 0.8.5";
+            packageId = "rand 0.9.0";
           }
           {
             name = "rand_distr";
@@ -3812,12 +3803,6 @@ rec {
             usesDefaultFeatures = false;
             features = [ "i128" ];
           }
-          {
-            name = "rand";
-            packageId = "rand 0.8.5";
-            optional = true;
-            usesDefaultFeatures = false;
-          }
         ];
         features = {
           "bytecheck" = [ "dep:bytecheck" ];
@@ -3829,7 +3814,7 @@ rec {
           "serde" = [ "dep:serde" ];
           "std" = [ "num-traits/std" ];
         };
-        resolvedDefaultFeatures = [ "default" "rand" "std" ];
+        resolvedDefaultFeatures = [ "default" "std" ];
       };
       "num-traits" = rec {
         crateName = "num-traits";
@@ -4527,7 +4512,7 @@ rec {
           "std" = [ "rand_core/std" "rand_chacha/std" "alloc" "getrandom" "libc" ];
           "std_rng" = [ "rand_chacha" ];
         };
-        resolvedDefaultFeatures = [ "alloc" "default" "getrandom" "libc" "rand_chacha" "small_rng" "std" "std_rng" ];
+        resolvedDefaultFeatures = [ "alloc" "default" "getrandom" "libc" "rand_chacha" "std" "std_rng" ];
       };
       "rand 0.9.0" = rec {
         crateName = "rand";
@@ -4685,9 +4670,9 @@ rec {
       };
       "rand_distr" = rec {
         crateName = "rand_distr";
-        version = "0.4.3";
-        edition = "2018";
-        sha256 = "0cgfwg3z0pkqhrl0x90c77kx70r6g9z4m6fxq9v0h2ibr2dhpjrj";
+        version = "0.5.1";
+        edition = "2021";
+        sha256 = "0qvlzxq4a2rvrf3wq0xq1bfw8iy9zqm6jlmbywqzld6g1paib1ka";
         authors = [
           "The Rand Project Developers"
         ];
@@ -4700,23 +4685,21 @@ rec {
           }
           {
             name = "rand";
-            packageId = "rand 0.8.5";
+            packageId = "rand 0.9.0";
             usesDefaultFeatures = false;
           }
         ];
         devDependencies = [
           {
             name = "rand";
-            packageId = "rand 0.8.5";
-            usesDefaultFeatures = false;
-            features = [ "std_rng" "std" "small_rng" ];
+            packageId = "rand 0.9.0";
+            features = [ "small_rng" ];
           }
         ];
         features = {
           "alloc" = [ "rand/alloc" ];
           "default" = [ "std" ];
-          "serde" = [ "dep:serde" ];
-          "serde1" = [ "serde" "rand/serde1" ];
+          "serde" = [ "dep:serde" "dep:serde_with" "rand/serde" ];
           "std" = [ "alloc" "rand/std" ];
           "std_math" = [ "num-traits/std" ];
         };

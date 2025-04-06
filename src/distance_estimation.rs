@@ -1,5 +1,6 @@
+use std::ops::Range;
+
 use cgmath::Zero;
-use num_complex::ComplexDistribution;
 use rand::Rng;
 use rand_distr::{Distribution, Normal, Uniform};
 
@@ -100,11 +101,33 @@ impl MandelbrotBoundary {
     }
 }
 
+struct BoundingBoxDistribution {
+    real: Uniform<f64>,
+    imag: Uniform<f64>,
+}
+
+impl Distribution<Complex> for BoundingBoxDistribution {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Complex {
+        let real = rng.sample(self.real);
+        let imag = rng.sample(self.imag);
+        Complex::new(real, imag)
+    }
+}
+
+impl BoundingBoxDistribution {
+    fn new(real: Range<f64>, imag: Range<f64>) -> Self {
+        Self {
+            real: Uniform::new(real.start, real.end).unwrap(),
+            imag: Uniform::new(imag.start, imag.end).unwrap(),
+        }
+    }
+}
+
 impl Distribution<Complex> for MandelbrotBoundary {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Complex {
         const DISTANCE: f64 = 1e-3;
 
-        let bbx_dist = ComplexDistribution::new(Uniform::new(-2.0, 0.5), Uniform::new(-1.2, 1.2));
+        let bbx_dist = BoundingBoxDistribution::new(-2.0..0.5, -1.2..1.2);
         let c_preferred = rng
             .sample_iter(bbx_dist)
             .find(|&c| {
@@ -114,7 +137,7 @@ impl Distribution<Complex> for MandelbrotBoundary {
             .unwrap();
 
         let r: f64 = rng.sample(Normal::new(0.0, 40.0 * DISTANCE).unwrap());
-        let theta = rng.gen_range(0.0..std::f64::consts::TAU);
+        let theta = rng.random_range(0.0..std::f64::consts::TAU);
         let pertubation = Complex::from_polar(r, theta);
 
         c_preferred + pertubation

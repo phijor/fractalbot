@@ -55,7 +55,7 @@ fn main() -> anyhow::Result<()> {
     const ITER: usize = 10_000;
     const MAX_ITER: usize = 4096;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let cmdline: Cmdline = argh::from_env();
     let c = cmdline

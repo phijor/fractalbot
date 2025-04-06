@@ -1,5 +1,5 @@
 use crate::complex::Complex;
-use rand::distributions::Distribution;
+use rand::distr::Distribution;
 use rand::Rng;
 
 struct Sign;
@@ -7,7 +7,7 @@ struct Sign;
 impl Distribution<f64> for Sign {
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        if rng.gen() {
+        if rng.random() {
             1.0
         } else {
             -1.0
@@ -32,7 +32,7 @@ impl InverseIteration {
     pub fn new(c: Complex) -> Self {
         Self {
             c,
-            rng: rand::thread_rng(),
+            rng: rand::rng(),
         }
     }
 
