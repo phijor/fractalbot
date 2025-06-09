@@ -19,11 +19,11 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(instance_url: String, access_token: String, user_agent: String) -> Self {
+    pub fn new(instance_url: String, access_token: String, user_agent: String) -> Result<Self> {
         let client: Arc<_> =
-            megalodon::generator(Mastodon, instance_url, Some(access_token), Some(user_agent))
+            megalodon::generator(Mastodon, instance_url, Some(access_token), Some(user_agent))?
                 .into();
-        Self { client }
+        Ok(Self { client })
     }
 
     async fn upload_image(&self, image_data: &'static [u8]) -> Result<UploadMedia> {

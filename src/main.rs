@@ -171,7 +171,8 @@ where
         env!("CARGO_PKG_VERSION")
     );
     let env = Environment::from_env()?;
-    let client = fractalbot_post::Client::new(env.instance_url, env.access_token, user_agent);
+    let client = fractalbot_post::Client::new(env.instance_url, env.access_token, user_agent)
+        .context("Failed to initialize Mastodon client")?;
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(client.post_status_with_image(encoded_image, description, visibility))
