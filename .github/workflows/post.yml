@@ -10,8 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/flake-checker-action@main
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
+        with:
+          nix_path: nixpkgs=channel:nixos-25.05
+      - name: Set up Nix cache
+        uses: cachix/cachix-action@v16
+        with:
+          name: '${{ secrets.CACHIX_NAME }}'
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Run fractalbot with Nix
         run: nix run . -- post --status-visibility public
         env:
