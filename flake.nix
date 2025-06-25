@@ -19,6 +19,17 @@
         { pkgs, ... }:
         {
           packages.default = pkgs.callPackage ./fractalbot.nix { };
+          devShells.default = pkgs.mkShell {
+            packages = with pkgs; [
+              cargo
+              cargo-outdated
+              clippy
+              rustc
+              rust-analyzer
+            ];
+
+            RUST_BACKTRACE = 1;
+          };
         };
     };
 }
