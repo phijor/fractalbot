@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+      - name: Check out most recent tag
+        run: |
+          TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          git checkout $TAG
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
