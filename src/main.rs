@@ -175,6 +175,11 @@ where
         .context("Failed to initialize Mastodon client")?;
 
     let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(client.post_status_with_image(encoded_image, description, visibility))
-        .context("Failed to post image")
+    rt.block_on(client.post_status_with_image(
+        encoded_image,
+        "fractal.png",
+        description,
+        visibility,
+    ))
+    .context("Failed to post image")
 }

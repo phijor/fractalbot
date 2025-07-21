@@ -26,10 +26,10 @@ impl Client {
         Ok(Self { client })
     }
 
-    async fn upload_image(&self, image_data: &'static [u8]) -> Result<UploadMedia> {
+    async fn upload_image(&self, image_data: &'static [u8], file_name: &'static str) -> Result<UploadMedia> {
         retry(Retry::any(), || async {
             self.client
-                .upload_media_reader(Box::new(image_data), None)
+                .upload_media_reader(Box::new(image_data), None, Some(file_name.into()))
                 .await
                 .map(|res| res.json())
         })
@@ -85,12 +85,13 @@ impl Client {
     pub async fn post_status_with_image(
         &self,
         image_data: &'static [u8],
+        file_name: &'static str,
         description: String,
         visibility: StatusVisibility,
     ) -> Result<()> {
         info!("Uploading image...");
         let media = self
-            .upload_image(image_data)
+            .upload_image(image_data, file_name)
             .await
             .context("Failed to upload image")?;
 
