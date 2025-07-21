@@ -1,17 +1,13 @@
 use crate::complex::Complex;
-use rand::distr::Distribution;
 use rand::Rng;
+use rand::distr::Distribution;
 
 struct Sign;
 
 impl Distribution<f64> for Sign {
     #[inline]
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        if rng.random() {
-            1.0
-        } else {
-            -1.0
-        }
+        if rng.random() { 1.0 } else { -1.0 }
     }
 }
 
