@@ -22,6 +22,7 @@
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
               cargo
+              cargo-audit
               cargo-outdated
               clippy
               rustc
