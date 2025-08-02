@@ -3,9 +3,12 @@
   rustPlatform,
 }:
 
+let
+  package = (lib.importTOML ./Cargo.toml).package;
+in
 rustPlatform.buildRustPackage (finalAttrs: {
-  pname = "fractalbot";
-  version = "0.3.5";
+  pname = package.name;
+  version = package.version;
   src = lib.cleanSourceWith {
     src = ./.;
     filter = path: type: !(type == "directory" && baseNameOf path == ".github");
