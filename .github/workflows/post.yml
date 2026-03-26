@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: v0.3.5
+          ref: v0.3.6
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
