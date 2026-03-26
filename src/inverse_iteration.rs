@@ -1,5 +1,5 @@
 use crate::complex::Complex;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand::distr::Distribution;
 
 struct Sign;

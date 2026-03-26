@@ -6,7 +6,7 @@ use humansize::SizeFormatter;
 use image::{ImageBuffer, ImageFormat};
 use indoc::formatdoc;
 use log::{debug, info};
-use rand::Rng;
+use rand::RngExt;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod bounding_box;

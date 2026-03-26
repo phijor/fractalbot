@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use cgmath::Zero;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Distribution, Normal, Uniform};
 
 use crate::complex::Complex;

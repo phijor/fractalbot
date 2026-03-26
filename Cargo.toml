@@ -11,8 +11,8 @@ cgmath = "0.18.0"
 fractalbot-post = { path = "./fractalbot-post" }
 image = { version = "0.25.1", default-features = false, features = ["png"] }
 num-complex = "0.4.4"
-rand = "0.9.0"
-rand_distr = "0.5.1"
+rand = "0.10.0"
+rand_distr = "0.6.0"
 tokio = { version = "1.34.0", default-features = false }
 rayon = "1.8.0"
 log = "0.4.20"

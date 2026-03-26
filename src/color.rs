@@ -1,5 +1,5 @@
 use cgmath::{Vector3, prelude::*, vec3};
-use rand::{distr::Distribution, seq::IndexedRandom};
+use rand::{RngExt, distr::Distribution, seq::IndexedRandom};
 use rand_distr::{Pert, Uniform};
 
 type Vec3 = Vector3<f64>;
